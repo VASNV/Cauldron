@@ -1,0 +1,18 @@
+--- ../src-base/minecraft/net/minecraftforge/event/entity/living/LivingSpawnEvent.java
++++ ../src-work/minecraft/net/minecraftforge/event/entity/living/LivingSpawnEvent.java
+@@ -36,6 +36,7 @@
+         public CheckSpawn(EntityLiving entity, World world, float x, float y, float z)
+         {
+             super(entity, world, x, y, z);
++            entity.spawnReason = "natural"; // Cauldron - used to handle CraftBukkit's SpawnReason with CustomSpawners
+         }
+     }
+ 
+@@ -45,6 +46,7 @@
+         public SpecialSpawn(EntityLiving entity, World world, float x, float y, float z)
+         {
+             super(entity, world, x, y, z);
++            entity.spawnReason = "spawner"; // Cauldron - used to handle CraftBukkit's SpawnReason with CustomSpawners
+         }
+     }
+     

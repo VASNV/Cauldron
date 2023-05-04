@@ -1,0 +1,85 @@
+--- ../src-base/minecraft/net/minecraft/network/TcpConnection.java
++++ ../src-work/minecraft/net/minecraft/network/TcpConnection.java
+@@ -13,6 +13,7 @@
+ import java.net.SocketException;
+ import java.security.PrivateKey;
+ import java.util.ArrayList;
++import java.util.Arrays;
+ import java.util.Collections;
+ import java.util.Iterator;
+ import java.util.List;
+@@ -26,6 +27,10 @@
+ import net.minecraft.network.packet.Packet252SharedKey;
+ import net.minecraft.server.MinecraftServer;
+ import net.minecraft.util.CryptManager;
++// Cauldron start
++import mcp.mobius.mobiuscore.profiler.ProfilerSection; // mobius import
++import net.minecraft.network.packet.Packet250CustomPayload;
++// Cauldron end
+ 
+ public class TcpConnection implements INetworkManager
+ {
+@@ -42,7 +47,7 @@
+     private Socket networkSocket;
+ 
+     /** The InetSocketAddress of the remote endpoint */
+-    private final SocketAddress remoteSocketAddress;
++    private SocketAddress remoteSocketAddress; // Spigot - remove final
+ 
+     /** The input stream connected to the socket. */
+     private volatile DataInputStream socketInputStream;
+@@ -265,6 +270,7 @@
+                 }
+             }
+ 
++            ProfilerSection.PACKET_OUTBOUND.start(packet); // Cauldron - mobius hook
+             return packet;
+         }
+     }
+@@ -323,7 +329,7 @@
+         try
+         {
+             Packet packet = Packet.readPacket(this.tcpConLogAgent, this.socketInputStream, this.theNetHandler.isServerHandler(), this.networkSocket);
+-
++            ProfilerSection.PACKET_INBOUND.start(packet); // Cauldron - mobius hook
+             if (packet != null)
+             {
+                 if (packet instanceof Packet252SharedKey && !this.isInputBeingDecrypted)
+@@ -378,7 +384,7 @@
+      */
+     private void onNetworkError(Exception par1Exception)
+     {
+-        par1Exception.printStackTrace();
++        // par1Exception.printStackTrace(); // CraftBukkit - Remove console spam
+         this.networkShutdown("disconnect.genericReason", new Object[] {"Internal exception: " + par1Exception.toString()});
+     }
+ 
+@@ -436,6 +442,18 @@
+     {
+         if (this.sendQueueByteLength > 2097152)
+         {
++            // Cauldron start - better debug
++            MinecraftServer.getServer().logInfo("Send queue byte length exceeded 2097152 bytes. " + this.sendQueueByteLength + " bytes were queued.");
++            MinecraftServer.getServer().logInfo("Dumping current data packets in queue...");
++            for (Object dataPacket : this.dataPackets)
++            {
++                if (dataPacket instanceof Packet250CustomPayload)
++                {
++                    Packet250CustomPayload packet = (Packet250CustomPayload)dataPacket;
++                    MinecraftServer.getServer().logInfo("[Packet: " + packet + "][Channel: " + packet.channel + "][size: " + packet.getPacketSize() + "]");
++                }
++            }
++            // Cauldron end
+             this.networkShutdown("disconnect.overflow", new Object[0]);
+         }
+ 
+@@ -593,4 +611,9 @@
+     {
+         return par0TcpConnection.writeThread;
+     }
++
++    public void setSocketAddress(SocketAddress address)
++    {
++        remoteSocketAddress = address;    // Spigot
++    }
+ }
